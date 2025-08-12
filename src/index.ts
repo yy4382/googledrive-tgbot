@@ -5,6 +5,7 @@ import type { MyContext, SessionData } from './types.js';
 import { setupCommands } from './commands/index.js';
 import { setupFileHandler } from './handlers/fileHandler.js';
 import { setupCallbackHandler } from './handlers/callbackHandler.js';
+import { setupTextHandler } from './handlers/textHandler.js';
 import { createDatabaseSession } from './services/sessionStorage.js';
 import { db } from './services/databaseService.js';
 
@@ -45,6 +46,7 @@ async function main() {
   setupCommands(bot);
   setupFileHandler(bot);
   setupCallbackHandler(bot);
+  setupTextHandler(bot);
 
   // Global error handler
   bot.catch(async (err) => {

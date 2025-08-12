@@ -34,9 +34,13 @@ export function setupCallbackHandler(bot: Bot<MyContext>) {
   bot.callbackQuery(/^set_default_(.+)$/, handleSetDefaultFolder);
   bot.callbackQuery(/^add_favorite_(.+)$/, handleAddFavorite);
   bot.callbackQuery(/^remove_favorite_(.+)$/, handleRemoveFavorite);
+  bot.callbackQuery(/^create_subfolder_(.+)$/, handleCreateSubfolder);
   
   // Help callback
   bot.callbackQuery('help', handleHelp);
+  
+  // Folder creation callbacks
+  bot.callbackQuery('cancel_folder_creation', handleCancelFolderCreation);
 }
 
 async function handleConnectGDrive(ctx: MyContext) {
@@ -282,6 +286,7 @@ async function handleFolderAction(ctx: MyContext) {
     
     keyboard
       .text('📁 Browse Contents', `browse_${folderId}`)
+      .text('🆕 Create Subfolder', `create_subfolder_${folderId}`)
       .row()
       .text('🔙 Back to Folders', 'browse_folders');
     
@@ -473,7 +478,37 @@ async function handleUploadAnother(ctx: MyContext) {
 }
 
 async function handleCreateFolder(ctx: MyContext) {
-  await ctx.answerCallbackQuery('💡 To create folders, use the Google Drive web interface for now.');
+  const { user } = ctx.session;
+  
+  if (!user.googleTokens) {
+    await ctx.answerCallbackQuery('❌ Google Drive not connected');
+    return;
+  }
+
+  // Set pending folder creation state
+  ctx.session.pendingFolderCreation = {
+    parentFolderId: undefined, // Creating in root
+    parentFolderName: 'My Drive'
+  };
+  console.log('📁 Set pending folder creation state:', ctx.session.pendingFolderCreation);
+
+  const keyboard = new InlineKeyboard()
+    .text('❌ Cancel', 'cancel_folder_creation');
+
+  await ctx.editMessageText(
+    '📁 **Create New Folder**\n\n' +
+    '📍 Location: My Drive (Root)\n\n' +
+    '✏️ **Send me the folder name:**\n\n' +
+    '📝 Folder names must:\n' +
+    '• Be 1-255 characters long\n' +
+    '• Not contain: `/ \\ ? * : | " < >`',
+    {
+      reply_markup: keyboard,
+      parse_mode: 'Markdown',
+    }
+  );
+
+  await ctx.answerCallbackQuery('📝 Send folder name...');
 }
 
 async function handleFolderSettings(ctx: MyContext) {
@@ -650,4 +685,68 @@ async function handleHelp(ctx: MyContext) {
   const { helpCommand } = await import('../commands/help.js');
   await helpCommand(ctx);
   await ctx.answerCallbackQuery();
+}
+
+async function handleCancelFolderCreation(ctx: MyContext) {
+  delete ctx.session.pendingFolderCreation;
+  
+  const { foldersCommand } = await import('../commands/folders.js');
+  await foldersCommand(ctx);
+  await ctx.answerCallbackQuery('Folder creation cancelled');
+}
+
+async function handleCreateSubfolder(ctx: MyContext) {
+  const match = ctx.callbackQuery?.data?.match(/^create_subfolder_(.+)$/);
+  if (!match) return;
+  
+  const parentFolderId = match[1];
+  const { user } = ctx.session;
+  
+  if (!user.googleTokens) {
+    await ctx.answerCallbackQuery('❌ Google Drive not connected');
+    return;
+  }
+
+  try {
+    const driveService = new DriveService(
+      user.googleTokens,
+      async (refreshedTokens) => {
+        ctx.session.user.googleTokens = refreshedTokens;
+      }
+    );
+    const folders = await driveService.listFolders();
+    const parentFolder = folders.find(f => f.id === parentFolderId);
+    
+    if (!parentFolder) {
+      await ctx.answerCallbackQuery('❌ Parent folder not found');
+      return;
+    }
+
+    // Set pending folder creation state
+    ctx.session.pendingFolderCreation = {
+      parentFolderId: parentFolderId,
+      parentFolderName: parentFolder.name
+    };
+    console.log('📁 Set pending subfolder creation state:', ctx.session.pendingFolderCreation);
+
+    const keyboard = new InlineKeyboard()
+      .text('❌ Cancel', 'cancel_folder_creation');
+
+    await ctx.editMessageText(
+      '📁 **Create New Subfolder**\n\n' +
+      `📍 Location: ${parentFolder.name}\n\n` +
+      '✏️ **Send me the folder name:**\n\n' +
+      '📝 Folder names must:\n' +
+      '• Be 1-255 characters long\n' +
+      '• Not contain: `/ \\ ? * : | " < >`',
+      {
+        reply_markup: keyboard,
+        parse_mode: 'Markdown',
+      }
+    );
+
+    await ctx.answerCallbackQuery('📝 Send subfolder name...');
+  } catch (error) {
+    await ctx.answerCallbackQuery('❌ Error loading parent folder');
+  }
 }

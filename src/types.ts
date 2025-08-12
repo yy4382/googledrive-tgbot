@@ -31,6 +31,10 @@ export interface SessionData {
     mimeType: string;
     size: number;
   };
+  pendingFolderCreation?: {
+    parentFolderId?: string;
+    parentFolderName?: string;
+  };
 }
 
 export type MyContext = Context & SessionFlavor<SessionData> & FileFlavor<Context>;

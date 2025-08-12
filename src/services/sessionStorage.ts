@@ -14,16 +14,21 @@ export class DatabaseSessionStorage implements StorageAdapter<SessionData> {
       const userId = parseInt(key);
       if (isNaN(userId)) return undefined;
       
-      const userSession = await db.getUserSession(userId);
-      if (!userSession) return undefined;
+      // Try to get full session data first
+      let sessionData = await db.getSessionData(userId);
       
-      // Convert database UserSession to Grammy SessionData format
-      const sessionData: SessionData = {
-        user: userSession,
-        // Note: pendingUpload is not persisted, will be undefined on restart
-      };
+      // Fallback to legacy user session for backward compatibility
+      if (!sessionData) {
+        const userSession = await db.getUserSession(userId);
+        if (userSession) {
+          sessionData = {
+            user: userSession,
+            // Note: pendingUpload is not persisted, will be undefined on restart
+          };
+        }
+      }
       
-      return sessionData;
+      return sessionData || undefined;
     } catch (error) {
       console.error(`Error reading session for key ${key}:`, error);
       return undefined;
@@ -35,11 +40,12 @@ export class DatabaseSessionStorage implements StorageAdapter<SessionData> {
       const userId = parseInt(key);
       if (isNaN(userId)) return;
       
-      // Save user session to database
-      await db.saveUserSession(value.user);
+      // Save full session data to database
+      await db.saveSessionData(userId, value);
       
       // Note: We don't persist pendingUpload as it's temporary upload state
       // It will be reset on server restart, which is acceptable behavior
+      // But pendingFolderCreation should be persisted
     } catch (error) {
       console.error(`Error writing session for key ${key}:`, error);
     }
@@ -50,7 +56,7 @@ export class DatabaseSessionStorage implements StorageAdapter<SessionData> {
       const userId = parseInt(key);
       if (isNaN(userId)) return;
       
-      await db.deleteUserSession(userId);
+      await db.deleteSessionData(userId);
     } catch (error) {
       console.error(`Error deleting session for key ${key}:`, error);
     }
