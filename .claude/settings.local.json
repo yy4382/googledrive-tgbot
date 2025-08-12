@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:grammy.dev)",
+      "Bash(mkdir:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(pnpm run:*)"
+    ],
+    "deny": []
+  }
+}
