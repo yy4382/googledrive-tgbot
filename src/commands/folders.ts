@@ -32,6 +32,7 @@ export async function foldersCommand(ctx: MyContext) {
     
     if (folders.length === 0) {
       const keyboard = new InlineKeyboard()
+        .text('🏠 Browse Root', 'browse_root')
         .text('📁 Create First Folder', 'create_folder')
         .row()
         .text('🔄 Refresh', 'browse_folders');
@@ -39,7 +40,7 @@ export async function foldersCommand(ctx: MyContext) {
       await ctx.reply(
         '📁 **No Folders Found**\n\n' +
         'You don\'t have any folders in your Google Drive yet.\n' +
-        'Create your first folder or upload files will go to the root directory.',
+        'You can still browse your root directory or create your first folder.',
         {
           reply_markup: keyboard,
           parse_mode: 'Markdown',
@@ -68,7 +69,9 @@ export async function foldersCommand(ctx: MyContext) {
     }
     
     keyboard
+      .text('🏠 Browse Root', 'browse_root')
       .text('🆕 Create Folder', 'create_folder')
+      .row()
       .text('⚙️ Settings', 'folder_settings');
 
     const message = `

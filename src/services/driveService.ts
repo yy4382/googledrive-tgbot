@@ -188,4 +188,46 @@ export class DriveService {
       size: file.size,
     }));
   }
+
+  async listFolderContents(parentId?: string): Promise<{ files: DriveFile[]; folders: DriveFolder[] }> {
+    await this.ensureValidToken();
+    
+    // Query for both files and folders in the specified parent folder
+    let query = "trashed=false";
+    if (parentId) {
+      query += ` and '${parentId}' in parents`;
+    } else {
+      query += " and 'root' in parents";
+    }
+
+    const response = await this.drive.files.list({
+      q: query,
+      fields: 'files(id,name,mimeType,webViewLink,webContentLink,size,parents)',
+      orderBy: 'folder,name', // Folders first, then by name
+    });
+
+    const files: DriveFile[] = [];
+    const folders: DriveFolder[] = [];
+
+    response.data.files.forEach((item: any) => {
+      if (item.mimeType === 'application/vnd.google-apps.folder') {
+        folders.push({
+          id: item.id,
+          name: item.name,
+          parentId: item.parents?.[0],
+        });
+      } else {
+        files.push({
+          id: item.id,
+          name: item.name,
+          mimeType: item.mimeType,
+          webViewLink: item.webViewLink,
+          webContentLink: item.webContentLink,
+          size: item.size,
+        });
+      }
+    });
+
+    return { files, folders };
+  }
 }

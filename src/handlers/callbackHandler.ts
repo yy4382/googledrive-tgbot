@@ -21,6 +21,7 @@ export function setupCallbackHandler(bot: Bot<MyContext>) {
   bot.callbackQuery('show_all_folders', handleShowAllFolders);
   bot.callbackQuery('create_folder', handleCreateFolder);
   bot.callbackQuery('folder_settings', handleFolderSettings);
+  bot.callbackQuery('browse_root', handleBrowseRoot);
   
   // Upload callbacks
   bot.callbackQuery('upload_to_root', handleUploadToRoot);
@@ -35,6 +36,7 @@ export function setupCallbackHandler(bot: Bot<MyContext>) {
   bot.callbackQuery(/^add_favorite_(.+)$/, handleAddFavorite);
   bot.callbackQuery(/^remove_favorite_(.+)$/, handleRemoveFavorite);
   bot.callbackQuery(/^create_subfolder_(.+)$/, handleCreateSubfolder);
+  bot.callbackQuery(/^browse_(.+)$/, handleBrowseFolderContents);
   
   // Help callback
   bot.callbackQuery('help', handleHelp);
@@ -749,4 +751,154 @@ async function handleCreateSubfolder(ctx: MyContext) {
   } catch (error) {
     await ctx.answerCallbackQuery('❌ Error loading parent folder');
   }
+}
+
+async function handleBrowseRoot(ctx: MyContext) {
+  const { user } = ctx.session;
+  
+  if (!user.googleTokens) {
+    await ctx.answerCallbackQuery('❌ Google Drive not connected');
+    return;
+  }
+  
+  try {
+    const driveService = new DriveService(
+      user.googleTokens,
+      async (refreshedTokens) => {
+        ctx.session.user.googleTokens = refreshedTokens;
+      }
+    );
+    
+    const { files, folders } = await driveService.listFolderContents();
+    
+    const keyboard = new InlineKeyboard();
+    
+    // Add folders first
+    folders.forEach(folder => {
+      keyboard.text(`📁 ${folder.name}`, `folder_${folder.id}`).row();
+    });
+    
+    // Add files (limit to 10 to avoid message too long)
+    files.slice(0, 10).forEach(file => {
+      const emoji = getFileEmoji(file.mimeType);
+      keyboard.url(`${emoji} ${file.name}`, file.webViewLink!).row();
+    });
+    
+    if (files.length > 10) {
+      keyboard.text(`... and ${files.length - 10} more files`, 'show_more_files').row();
+    }
+    
+    keyboard
+      .text('🆕 Create Folder', 'create_folder')
+      .row()
+      .text('🔙 Back to Folders', 'browse_folders');
+    
+    const folderCount = folders.length;
+    const fileCount = files.length;
+    
+    await ctx.editMessageText(
+      `🏠 **My Drive (Root)**\n\n` +
+      `📊 **Contents:**\n` +
+      `📁 ${folderCount} folders\n` +
+      `📄 ${fileCount} files\n\n` +
+      `Select an item to view or manage:`,
+      {
+        reply_markup: keyboard,
+        parse_mode: 'Markdown',
+      }
+    );
+    
+    await ctx.answerCallbackQuery();
+  } catch (error) {
+    console.error('Browse root error:', error);
+    await ctx.answerCallbackQuery('❌ Error loading root folder contents');
+  }
+}
+
+async function handleBrowseFolderContents(ctx: MyContext) {
+  const match = ctx.callbackQuery?.data?.match(/^browse_(.+)$/);
+  if (!match) return;
+  
+  const folderId = match[1];
+  const { user } = ctx.session;
+  
+  if (!user.googleTokens) {
+    await ctx.answerCallbackQuery('❌ Google Drive not connected');
+    return;
+  }
+  
+  try {
+    const driveService = new DriveService(
+      user.googleTokens,
+      async (refreshedTokens) => {
+        ctx.session.user.googleTokens = refreshedTokens;
+      }
+    );
+    
+    // Get folder info and contents
+    const allFolders = await driveService.listFolders();
+    const currentFolder = allFolders.find(f => f.id === folderId);
+    
+    if (!currentFolder) {
+      await ctx.answerCallbackQuery('❌ Folder not found');
+      return;
+    }
+    
+    const { files, folders } = await driveService.listFolderContents(folderId);
+    
+    const keyboard = new InlineKeyboard();
+    
+    // Add subfolders first
+    folders.forEach(folder => {
+      keyboard.text(`📁 ${folder.name}`, `folder_${folder.id}`).row();
+    });
+    
+    // Add files (limit to 10 to avoid message too long)
+    files.slice(0, 10).forEach(file => {
+      const emoji = getFileEmoji(file.mimeType);
+      keyboard.url(`${emoji} ${file.name}`, file.webViewLink!).row();
+    });
+    
+    if (files.length > 10) {
+      keyboard.text(`... and ${files.length - 10} more files`, 'show_more_files').row();
+    }
+    
+    keyboard
+      .text('🆕 Create Subfolder', `create_subfolder_${folderId}`)
+      .row()
+      .text('🔙 Back to Folder', `folder_${folderId}`)
+      .text('🏠 Back to Folders', 'browse_folders');
+    
+    const folderCount = folders.length;
+    const fileCount = files.length;
+    
+    await ctx.editMessageText(
+      `📁 **${currentFolder.name}**\n\n` +
+      `📊 **Contents:**\n` +
+      `📁 ${folderCount} folders\n` +
+      `📄 ${fileCount} files\n\n` +
+      `Select an item to view or manage:`,
+      {
+        reply_markup: keyboard,
+        parse_mode: 'Markdown',
+      }
+    );
+    
+    await ctx.answerCallbackQuery();
+  } catch (error) {
+    console.error('Browse folder contents error:', error);
+    await ctx.answerCallbackQuery('❌ Error loading folder contents');
+  }
+}
+
+function getFileEmoji(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return '🖼️';
+  if (mimeType.startsWith('video/')) return '🎥';
+  if (mimeType.startsWith('audio/')) return '🎵';
+  if (mimeType.includes('pdf')) return '📄';
+  if (mimeType.includes('document') || mimeType.includes('word')) return '📝';
+  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '📊';
+  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '📊';
+  if (mimeType.includes('zip') || mimeType.includes('archive')) return '📦';
+  return '📄';
 }
