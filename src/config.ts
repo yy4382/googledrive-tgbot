@@ -1,6 +1,11 @@
 export const CONFIG = {
   BOT_TOKEN: process.env.BOT_TOKEN!,
   
+  BOT_API: {
+    SERVER_URL: process.env.BOT_API_SERVER || 'https://api.telegram.org',
+    USE_LOCAL_SERVER: process.env.USE_LOCAL_BOT_API === 'true',
+  },
+  
   GOOGLE: {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
     CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,

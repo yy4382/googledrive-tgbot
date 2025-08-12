@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
+import { createReadStream } from 'fs';
 import type { DriveFile, DriveFolder } from '../types.js';
 import { CONFIG } from '../config.js';
 
@@ -137,6 +138,39 @@ export class DriveService {
     const media = {
       mimeType: mimeType,
       body: Readable.from(fileBuffer),
+    };
+
+    const response = await this.drive.files.create({
+      requestBody: fileMetadata,
+      media: media,
+      fields: 'id,name,mimeType,webViewLink,webContentLink,size',
+    });
+
+    return {
+      id: response.data.id,
+      name: response.data.name,
+      mimeType: response.data.mimeType,
+      webViewLink: response.data.webViewLink,
+      webContentLink: response.data.webContentLink,
+      size: response.data.size,
+    };
+  }
+
+  async uploadFileFromPath(
+    filePath: string,
+    fileName: string,
+    mimeType: string,
+    parentId?: string
+  ): Promise<DriveFile> {
+    await this.ensureValidToken();
+    const fileMetadata = {
+      name: fileName,
+      parents: parentId ? [parentId] : ['root'],
+    };
+
+    const media = {
+      mimeType: mimeType,
+      body: createReadStream(filePath),
     };
 
     const response = await this.drive.files.create({

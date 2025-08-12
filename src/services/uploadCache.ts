@@ -1,8 +1,10 @@
 interface PendingUpload {
-  buffer: Buffer;
+  buffer?: Buffer;
+  filePath?: string;
   fileName: string;
   mimeType: string;
   size: number;
+  isLocalServer: boolean;
   timestamp: number;
 }
 
