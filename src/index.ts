@@ -41,6 +41,17 @@ async function main() {
 
   bot.api.config.use(hydrateFiles(CONFIG.BOT_TOKEN));
 
+  // User whitelist middleware
+  bot.use(async (ctx, next) => {
+    if (ctx.from && CONFIG.TELEGRAM_USER_WHITELIST.length > 0) {
+      if (!CONFIG.TELEGRAM_USER_WHITELIST.includes(ctx.from.id)) {
+        await ctx.reply("you are not in white list, contact author");
+        return;
+      }
+    }
+    await next();
+  });
+
   // User session recovery middleware
   bot.use(async (ctx, next) => {
     if (ctx.from) {

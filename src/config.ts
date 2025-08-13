@@ -20,6 +20,11 @@ export const CONFIG = {
     NODE_ENV: process.env.NODE_ENV || 'development',
   },
   
+  // Telegram user whitelist
+  TELEGRAM_USER_WHITELIST: process.env.TELEGRAM_USER_WHITELIST 
+    ? process.env.TELEGRAM_USER_WHITELIST.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+    : [],
+  
   // Development mode helper
   IS_DEV: (process.env.NODE_ENV || 'development') === 'development',
 };
@@ -60,4 +65,13 @@ if (!hasOAuth) {
   process.exit(1);
 } else {
   console.log('✅ Google OAuth configuration: READY');
+}
+
+// Log whitelist configuration
+console.log('🔍 Validating Telegram user whitelist...');
+if (CONFIG.TELEGRAM_USER_WHITELIST.length > 0) {
+  console.log(`✅ User whitelist: ${CONFIG.TELEGRAM_USER_WHITELIST.length} authorized users`);
+  debugLog('Authorized user IDs:', CONFIG.TELEGRAM_USER_WHITELIST);
+} else {
+  console.log('⚠️ User whitelist: DISABLED (all users allowed)');
 }
