@@ -238,7 +238,7 @@ async function showFolderSelection(ctx: MyContext, message: any) {
     const message_text = `
 📎 **Ready to Upload**
 
-**File:** \`${fileInfo.fileName}\`
+**File:** \`${fileInfo.fileName.replaceAll("`", "")}\`
 **Size:** ${fileSizeFormatted}
 **Type:** \`${fileInfo.mimeType}\`
 
@@ -292,7 +292,7 @@ export async function performUpload(
       message.chat.id,
       message.message_id,
       "⬆️ **Uploading to Google Drive...**\n\n" +
-        `📎 \`${fileInfo.fileName}\`\n` +
+        `📎 \`${fileInfo.fileName.replaceAll("`", "")}\`\n` +
         `📊 ${formatBytes(fileInfo.size)}`,
       { parse_mode: "Markdown" }
     );
@@ -337,7 +337,7 @@ export async function performUpload(
     const successMessage = `
 ✅ **Upload Successful!**
 
-**File:** \`${uploadedFile.name}\`
+**File:** \`${uploadedFile.name.replaceAll("`", "")}\`
 **Size:** ${
       uploadedFile.size ? formatBytes(parseInt(uploadedFile.size)) : "Unknown"
     }
