@@ -40,7 +40,7 @@ services:
       - BOT_API_SERVER=http://telegram-bot-api:8081
       - NODE_ENV=${NODE_ENV:-production}
     volumes:
-      - telegram-bot-api-data:/var/lib/telegram-bot-api:ro  # Read-only access to shared files
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
       - ./data:/app/data  # Persistent database storage
     networks:
       - bot-network
