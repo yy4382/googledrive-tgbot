@@ -127,6 +127,17 @@ async function handleFileUpload(ctx: MyContext) {
 
     if (fileSize > fileSizeLimit) {
       const limitText = isLocalServer ? "2GB" : "20MB";
+      
+      // Clean up the file if it's from local server
+      if (isLocalServer && filePath) {
+        try {
+          await fs.unlink(filePath);
+          debugLog(`Cleaned up oversized file: ${filePath}`);
+        } catch (err) {
+          debugLog(`Failed to cleanup oversized file: ${err}`);
+        }
+      }
+      
       await ctx.api.editMessageText(
         uploadingMessage.chat.id,
         uploadingMessage.message_id,

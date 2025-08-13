@@ -34,13 +34,38 @@ class UploadCache {
   }
 
   delete(userId: number) {
-    this.cache.delete(userId);
+    const upload = this.cache.get(userId);
+    if (upload) {
+      // Clean up local file if it exists
+      if (upload.isLocalServer && upload.filePath) {
+        this.cleanupFile(upload.filePath);
+      }
+      this.cache.delete(userId);
+    }
+  }
+
+  private cleanupFile(filePath: string) {
+    import('fs').then(({ unlink }) => {
+      unlink(filePath, (err) => {
+        if (err && err.code !== 'ENOENT') {
+          console.warn(`Failed to cleanup file ${filePath}:`, err.message);
+        } else if (!err) {
+          console.log(`Cleaned up file: ${filePath}`);
+        }
+      });
+    }).catch(err => {
+      console.warn('Failed to import fs for cleanup:', err);
+    });
   }
 
   cleanup() {
     const now = Date.now();
     for (const [userId, upload] of this.cache.entries()) {
       if (now - upload.timestamp > this.TTL_MS) {
+        // Clean up expired files
+        if (upload.isLocalServer && upload.filePath) {
+          this.cleanupFile(upload.filePath);
+        }
         this.cache.delete(userId);
       }
     }
