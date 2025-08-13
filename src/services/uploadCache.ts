@@ -76,5 +76,6 @@ export const uploadCache = new UploadCache();
 
 // Cleanup expired uploads every 5 minutes
 setInterval(() => {
+  console.log("Cleaning up expired uploads");
   uploadCache.cleanup();
 }, 5 * 60 * 1000);

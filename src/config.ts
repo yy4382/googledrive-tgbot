@@ -9,8 +9,6 @@ export const CONFIG = {
   GOOGLE: {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
     CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
-    SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   },
   
   DATABASE: {
@@ -49,27 +47,17 @@ for (const varName of requiredVars) {
 // Validate Google configuration
 console.log('🔍 Validating Google configuration...');
 const hasOAuth = CONFIG.GOOGLE.CLIENT_ID && CONFIG.GOOGLE.CLIENT_SECRET;
-const hasServiceAccount = CONFIG.GOOGLE.SERVICE_ACCOUNT_EMAIL && CONFIG.GOOGLE.PRIVATE_KEY;
 
 debugLog('Google config status:', {
   CLIENT_ID: CONFIG.GOOGLE.CLIENT_ID ? 'SET' : 'NOT SET',
   CLIENT_SECRET: CONFIG.GOOGLE.CLIENT_SECRET ? 'SET' : 'NOT SET',
-  SERVICE_ACCOUNT_EMAIL: CONFIG.GOOGLE.SERVICE_ACCOUNT_EMAIL ? 'SET' : 'NOT SET',
-  PRIVATE_KEY: CONFIG.GOOGLE.PRIVATE_KEY ? 'SET' : 'NOT SET',
-  hasOAuth,
-  hasServiceAccount
+  hasOAuth
 });
 
-if (!hasOAuth && !hasServiceAccount) {
-  console.error('❌ Google Drive configuration incomplete. Provide either OAuth credentials or Service Account credentials.');
-  console.log('Required for OAuth: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
-  console.log('Required for Service Account: GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY');
+if (!hasOAuth) {
+  console.error('❌ Google Drive configuration incomplete. OAuth credentials required.');
+  console.log('Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
   process.exit(1);
 } else {
-  if (hasOAuth) {
-    console.log('✅ Google OAuth configuration: READY');
-  }
-  if (hasServiceAccount) {
-    console.log('✅ Google Service Account configuration: READY');
-  }
+  console.log('✅ Google OAuth configuration: READY');
 }

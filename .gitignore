@@ -54,7 +54,6 @@ Thumbs.db
 # Google credentials
 credentials.json
 token.json
-service-account-key.json
 
 # Telegram bot specific
 bot-session.json
