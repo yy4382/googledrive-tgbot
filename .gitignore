@@ -58,3 +58,8 @@ service-account-key.json
 
 # Telegram bot specific
 bot-session.json
+
+.env
+.env.*
+!.env.example
+!.env.example.*

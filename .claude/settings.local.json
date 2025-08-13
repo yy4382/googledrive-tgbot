@@ -5,7 +5,8 @@
       "Bash(mkdir:*)",
       "Bash(pnpm tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

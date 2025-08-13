@@ -1,0 +1,60 @@
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    container_name: telegram-bot-api
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    ports:
+      - "${TELEGRAM_BOT_API_PORT:-8081}:8081"
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_VERBOSITY=${TELEGRAM_VERBOSITY:-1}
+      - TELEGRAM_STAT=${TELEGRAM_STAT:-}
+      - TELEGRAM_LOCAL=true
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"] 
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  gdrive-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gdrive-bot
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot-api
+    env_file:
+      - .env.docker
+    environment:
+      # Override for Docker environment
+      - USE_LOCAL_BOT_API=true
+      - BOT_API_SERVER=http://telegram-bot-api:8081
+      - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api:ro  # Read-only access to shared files
+      - ./data:/app/data  # Persistent database storage
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Bot health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  telegram-bot-api-data:
+    driver: local

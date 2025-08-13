@@ -18,10 +18,10 @@ A high-performance Telegram bot built with Grammy framework that enables seamles
 
 ## File Size Limits & Performance
 
-| Configuration | File Size Limit | Memory Usage | Performance |
-|---------------|----------------|--------------|-------------|
-| **Local Bot API Server** | 2GB | Minimal (streaming) | ⚡ Optimal |
-| **Cloud Bot API** | 20MB | Full buffer | ✅ Standard |
+| Configuration            | File Size Limit | Memory Usage        | Performance |
+| ------------------------ | --------------- | ------------------- | ----------- |
+| **Local Bot API Server** | 2GB             | Minimal (streaming) | ⚡ Optimal   |
+| **Cloud Bot API**        | 20MB            | Full buffer         | ✅ Standard  |
 
 ## Quick Start
 
@@ -66,7 +66,6 @@ A high-performance Telegram bot built with Grammy framework that enables seamles
    # Optional: Large File Support (Local Bot API Server)
    USE_LOCAL_BOT_API=true
    BOT_API_SERVER=http://localhost:8081
-   BOT_API_WORKING_DIR=/path/to/telegram-bot-api/build
    ```
 
 4. **For Large File Support (Optional):**
@@ -135,17 +134,15 @@ User Upload → Bot API Server → Path Resolution → Size Check → Drive Uplo
 
 ### Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `BOT_TOKEN` | Telegram bot token from BotFather | ✅ | - |
-| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID | ✅ | - |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret | ✅ | - |
-| `USE_LOCAL_BOT_API` | Enable local Bot API server | ❌ | `false` |
-| `BOT_API_SERVER` | Local Bot API server URL | ❌ | `http://localhost:8081` |
-| `BOT_API_WORKING_DIR` | Bot API server working directory | ❌ | - |
-| `DB_PATH` | Database file location | ❌ | `./data/users.json` |
-| `PORT` | Server port for OAuth callback | ❌ | `3000` |
-| `NODE_ENV` | Environment mode | ❌ | `development` |
+| Variable               | Description                       | Required | Default                 |
+| ---------------------- | --------------------------------- | -------- | ----------------------- |
+| `BOT_TOKEN`            | Telegram bot token from BotFather | ✅        | -                       |
+| `GOOGLE_CLIENT_ID`     | Google OAuth2 client ID           | ✅        | -                       |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret       | ✅        | -                       |
+| `USE_LOCAL_BOT_API`    | Enable local Bot API server       | ❌        | `false`                 |
+| `BOT_API_SERVER`       | Local Bot API server URL          | ❌        | `http://localhost:8081` |
+| `DB_PATH`              | Database file location            | ❌        | `./data/users.json`     |
+| `NODE_ENV`             | Environment mode                  | ❌        | `development`           |
 
 ### Large File Configuration
 
@@ -156,7 +153,6 @@ To enable large file support (up to 2GB):
    ```bash
    USE_LOCAL_BOT_API=true
    BOT_API_SERVER=http://localhost:8081
-   BOT_API_WORKING_DIR=/path/to/telegram-bot-api/build
    ```
 3. **Start both servers:**
    ```bash
@@ -189,14 +185,6 @@ The bot includes comprehensive file cleanup for local Bot API server usage:
 2. Upload error → uploadCache.delete() → file deleted  
 3. File too large → fs.unlink() → immediate deletion
 4. Session timeout → cleanup() → expired files deleted
-```
-
-### File Storage Locations
-
-Local Bot API server stores files relative to its working directory:
-```bash
-# Files stored as: {BOT_API_WORKING_DIR}/documents/file_1.jpg
-# Configure BOT_API_WORKING_DIR to help bot locate files
 ```
 
 ### Manual Cleanup (if needed)
@@ -326,37 +314,6 @@ volumes:
 ```
 
 ## Troubleshooting
-
-### Common Issues
-
-- **"Google Drive Not Connected"** - Check OAuth2 credentials and redirect URI
-- **"File Too Large"** - Use local Bot API server for files >20MB
-- **"Upload Failed"** - Check Google Drive API quotas and permissions
-- **"File not found at path"** - Set `BOT_API_WORKING_DIR` environment variable
-- **"Invalid Credentials"** - Tokens may have expired, reconnect account
-
-### File Path Issues (Local Bot API)
-
-If you see "File not found" errors:
-
-1. **Check working directory:**
-   ```bash
-   # Where you run telegram-bot-api
-   pwd
-   # Set this path in BOT_API_WORKING_DIR
-   ```
-
-2. **Enable debug logging:**
-   ```bash
-   NODE_ENV=development pnpm run dev
-   ```
-
-3. **Check the logs for path resolution attempts:**
-   ```
-   [DEBUG] Raw file path from Bot API: documents/file_1.jpg
-   [DEBUG] Trying paths: documents/file_1.jpg, /full/path/documents/file_1.jpg, ...
-   [DEBUG] Found file at: /correct/path/documents/file_1.jpg
-   ```
 
 ### Performance Issues
 
